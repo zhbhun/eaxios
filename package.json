@@ -1,0 +1,30 @@
+{
+  "name": "eaxios",
+  "version": "0.1.0",
+  "description": "Axios wrapper with user friendly error",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc --build tsconfig.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhbhun/eaxios"
+  },
+  "keywords": [
+    "xhr",
+    "http",
+    "ajax",
+    "promise",
+    "node"
+  ],
+  "author": "zhbhun",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zhbhun/eaxios/issues"
+  },
+  "homepage": "https://github.com/zhbhun/eaxios",
+  "devDependencies": {},
+  "dependencies": {
+    "axios": "~0.19.2"
+  }
+}
