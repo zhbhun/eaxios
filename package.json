@@ -2,10 +2,6 @@
   "name": "eaxios",
   "version": "0.1.0",
   "description": "Axios wrapper with user friendly error",
-  "main": "lib/index.js",
-  "scripts": {
-    "build": "tsc --build tsconfig.json"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/zhbhun/eaxios"
@@ -23,8 +19,46 @@
     "url": "https://github.com/zhbhun/eaxios/issues"
   },
   "homepage": "https://github.com/zhbhun/eaxios",
-  "devDependencies": {},
+  "engines": {
+    "node": ">= 10"
+  },
+  "main": "./lib/index.js",
+  "files": [
+    "dist",
+    "lib",
+    "errors.svg"
+  ],
+  "scripts": {
+    "clean": "rimraf dist coverage lib tmp",
+    "demo": "node test/server.js",
+    "bundle": "npm run build && rimraf dist && webpack",
+    "build": "rimraf lib && tsc -p tsconfig.release.json",
+    "build:watch": "tsc -w -p tsconfig.release.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
   "dependencies": {
     "axios": "~0.19.2"
+  },
+  "devDependencies": {
+    "@types/jest": "~25.2.1",
+    "@types/node": "~12.12.38",
+    "@typescript-eslint/eslint-plugin": "~2.32.0",
+    "@typescript-eslint/parser": "~2.32.0",
+    "eslint": "~7.0.0",
+    "eslint-config-prettier": "~6.11.0",
+    "eslint-plugin-jest": "~23.10.0",
+    "express": "^4.17.1",
+    "jest": "~25.2.7",
+    "prettier": "~2.0.5",
+    "puppeteer": "^3.0.4",
+    "rimraf": "~3.0.2",
+    "serve": "^11.3.2",
+    "ts-jest": "~25.5.1",
+    "tsutils": "~3.17.0",
+    "typescript": "~3.8.3",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
   }
 }

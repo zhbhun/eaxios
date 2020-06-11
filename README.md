@@ -4,6 +4,27 @@
 
 ![errors.svg](errors.svg)
 
+```ts
+import axios, {
+    AxiosRequestConfig,
+
+} from 'axios';
+
+// axios:AxiosStatic extends AxiosInstance
+axios.create(config?: AxiosRequestConfig);
+axios.Cancel;
+axios.CancelToken;
+axios.isCancel(value: any)
+
+// AxiosInstance
+axios.defaults;
+axios.interceptors.request;
+axios.interceptors.response;
+axios.getUri
+
+
+```
+
 ```js
 import {CancelToken, create} from 'axios';
 

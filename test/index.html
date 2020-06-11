@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Failure</title>
+</head>
+
+<body>
+  <ul>
+    <li><button type="button" data-id="timeout" data-abort="1">请求取消</button></li>
+    <li><button type="button" data-id="timeout">请求超时</button></li>
+    <li><button type="button" data-id="error">服务器异常</button></li>
+    <li><button type="button" data-id="format">响应解析失败</button></li>
+    <li><button type="button" data-id="failure">业务异常</button></li>
+    <li><button type="button" data-id="success">请求成功</button></li>
+  </ul>
+
+  <script src="/dist/axios.js"></script>
+  <script>
+    document.body.addEventListener('click', function (event) {
+      var id = event.target.dataset.id;
+      if (id) {
+        test(id, event.target.dataset.abort === '1');
+      }
+    });
+
+    function test(id, abort) {
+      var CancelToken = axios.CancelToken;
+      var source = CancelToken.source();
+      axios({
+        method: 'get',
+        url: `/apis/${id}`,
+        timeout: 3000,
+        /**
+         * 默认强制转换为 JSON，但转换失败并不会抛出错误，这里修改后不做处理
+         * @see https://github.com/axios/axios/blob/c120f44d3d29c8e822a92e1d6879b8b77be6b9dc/lib/defaults.js#L57
+         */
+        transformResponse: function (response, status) {
+          if (response.code > 0) {
+            throw response;
+          }
+          return response.data;
+        },
+        /**
+         * 默认只有 20x 请求才算成功，非 20x 都会抛出异常，这里修改后只要有大于 0 的状态码就认为成功
+         * @see https://github.com/axios/axios/blob/c120f44d3d29c8e822a92e1d6879b8b77be6b9dc/lib/defaults.js#L79
+         */
+        validateStatus: function (status) {
+          return status > 0;
+        },
+        cancelToken: source.token
+      })
+        .then(function (data) {
+          console.log(`data: ${JSON.stringify(data)}`);
+        })
+        .catch(function (error) {
+          console.log('error:', printError(error));
+        });
+      if (abort) {
+        setTimeout(() => {
+          source.cancel('Operation canceled by the user.');
+        }, 1000);
+      }
+    }
+
+
+    function printError(error) {
+      return `code: ${error.code}, name: ${error.name}, message: ${error.message}, isAxiosError: ${error.isAxiosError}`;
+    }
+
+  </script>
+</body>
+
+</html>
