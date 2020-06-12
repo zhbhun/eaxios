@@ -24,7 +24,7 @@ interface ResponseTransformer {
     }): any;
 }
 interface RequestConfig extends Omit<Axios.AxiosRequestConfig, 'transformResponse'> {
-    transformResponse: ResponseTransformer | ResponseTransformer[];
+    transformResponse?: ResponseTransformer | ResponseTransformer[];
 }
 interface Instance {
     <T = any>(config: RequestConfig): AxiosPromise<T>;

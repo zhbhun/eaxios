@@ -38,7 +38,7 @@ interface ResponseTransformer {
 
 interface RequestConfig
   extends Omit<Axios.AxiosRequestConfig, 'transformResponse'> {
-  transformResponse: ResponseTransformer | ResponseTransformer[];
+  transformResponse?: ResponseTransformer | ResponseTransformer[];
 }
 
 interface Instance {
