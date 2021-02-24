@@ -1,0 +1,28 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - master
+      - alpha
+      - beta
+      - next-major
+      - next
+
+jobs:
+  publish_npm:
+    name: publish npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm ci
+      - run: npm run bundle
+      - env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
+©

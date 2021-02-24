@@ -5,8 +5,8 @@ module.exports = {
   entry: path.resolve(__dirname, './lib/index.js'),
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'axios.js',
-    library: 'axios',
+    filename: 'eaxios.js',
+    library: 'eaxios',
     libraryExport: 'default',
     libraryTarget: 'umd'
   },

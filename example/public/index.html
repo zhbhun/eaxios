@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Failure</title>
+  </head>
+
+  <body>
+    <ul>
+      <li>
+        <button type="button" data-id="timeout" data-abort="1">请求取消</button>
+      </li>
+      <li><button type="button" data-id="timeout">请求超时</button></li>
+      <li><button type="button" data-id="error">服务器异常</button></li>
+      <li><button type="button" data-id="format">响应解析失败</button></li>
+      <li><button type="button" data-id="failure">业务异常</button></li>
+      <li><button type="button" data-id="success">请求成功</button></li>
+    </ul>
+
+    <script src="/eaxios.js"></script>
+    <script>
+      document.body.addEventListener('click', function (event) {
+        var id = event.target.dataset.id;
+        if (id) {
+          test(id, event.target.dataset.abort === '1');
+        }
+      });
+
+      function test(id, abort) {
+        var CancelToken = eaxios.CancelToken;
+        var source = CancelToken.source();
+
+        eaxios({
+          method: 'get',
+          url: `/apis/${id}`,
+          timeout: 1000,
+          cancelToken: source.token,
+        })
+          .then(function (response) {
+            console.log('success: ', response);
+          })
+          .catch(function (error) {
+            console.log('error:', printError(error));
+          });
+        if (abort) {
+          setTimeout(() => {
+            source.cancel('Operation canceled by the user.');
+          }, 1000);
+        }
+      }
+
+      function printError(error) {
+        return `code: ${error.code}, name: ${error.name}, message: ${error.message}, isAxiosError: ${error.isAxiosError}, stack:\n${error.stack}`;
+      }
+    </script>
+  </body>
+</html>
