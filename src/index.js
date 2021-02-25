@@ -11,22 +11,7 @@ const EAXIOS_ERROR_CODE = {
   // 其他业务错误码
 };
 
-function process(instance) {
-  instance.defaults.responseType = 'json';
-  instance.defaults.validateStatus = function (status) {
-    // 取消、网络和超时情况的响应状态码为 0，为了统一在响应拦截器 then 中调用transformResponse，这里需要将 validateStatus 设置为 status 大于 0
-    return status > 0; //
-  };
-  instance.defaults.transformResponse = [
-    function (data, response) {
-      if (response.status >= 400) {
-        const error = new Error(response.data);
-        error.code = response.config.responseError.SERVER_ERROR;
-        throw error;
-      }
-      return data;
-    },
-  ];
+function intercept(instance) {
   instance.interceptors.request.use(
     function (config) {
       // TODO: 如何继承默认值配置
@@ -164,10 +149,11 @@ function process(instance) {
       return Promise.reject(error);
     },
   );
+
   instance.lagacyCreate = instance.create;
   instance.create = function (config) {
     const newInstance = instance.lagacyCreate(config);
-    return process(newInstance);
+    return intercept(newInstance);
   };
   instance.createError = function (message, code, response) {
     const error = new Error(message);
@@ -185,7 +171,27 @@ function process(instance) {
     }
     return error;
   };
+
   return instance;
+}
+
+function process(instance) {
+  instance.defaults.responseType = 'json';
+  instance.defaults.validateStatus = function (status) {
+    // 取消、网络和超时情况的响应状态码为 0，为了统一在响应拦截器 then 中调用transformResponse，这里需要将 validateStatus 设置为 status 大于 0
+    return status > 0; //
+  };
+  instance.defaults.transformResponse = [
+    function (data, response) {
+      if (response.status >= 400) {
+        const error = new Error(response.data);
+        error.code = response.config.responseError.SERVER_ERROR;
+        throw error;
+      }
+      return data;
+    },
+  ];
+  return intercept(instance);
 }
 
 const eaxios = process(axios);

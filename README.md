@@ -34,178 +34,6 @@ Axios 存在问题：
 - 取消 Axios validateStatus 的配置选项，默认所有大于 0 的状态码都是正确的状态码，然后在 Axios 拦截器 then 中进行数据解析（非 200 的可能也是 JSON，所以要复用 200 的 JSON 解析代码），并且根据异常情况抛出直观的错误对象
 - 内置默认处理表单类型的请求体
 
-代码示例：
-
-```js
-function enhanceError(error, config, code, request, response) {
-  error.config = config;
-  if (code) {
-    error.code = code;
-  
-  error.request = request;
-  error.response = response;
-  error.isAxiosError = true  
-  error.toJSON = function toJSON() {
-    return {
-      // Standard
-      message: this.message,
-      name: this.name,
-      // Microsoft
-      description: this.description,
-      number: this.number,
-      // Mozilla
-      fileName: this.fileName,
-      lineNumber: this.lineNumber,
-      columnNumber: this.columnNumber,
-      stack: this.stack,
-      // Axios
-      config: this.config,
-      code: this.code,
-    };
-  };
-  return error;
-}
-const AXIOS_ERROR = {
-  REQUEST_OFFLINE: "REQUEST_OFFLINE",
-  REQUEST_TIMEOUT: "REQUEST_TIMEOUT",
-  SERVER_ERROR: "SERVER_ERROR",
-  RESPONSE_INVALID: "RESPONSE_INVALID",
-  // 其他业务错误码
-};
-axios.defaults.responseType = "json";
-axios.defaults.validateStatus = function (status) {
-  // 取消、网络和超时情况的响应状态码为 0，为了统一在响应拦截器 then 中调用transformResponse，这里需要将 validateStatus 设置为 status 大于 0
-  return status > 0; //
-};
-axios.defaults.transformResponse = [
-  function (data, response) {
-    if (response.status > 400) {
-      const error = new Error(response.data);
-      error.code = response.config.responseError.SERVER_ERROR;
-      throw error;
-    }
-    return data;
-  },
-];
-axios.interceptors.request.use(
-  function (config) {
-    // TODO: 如何继承默认值配置
-    config.responseError = {
-      ...AXIOS_ERROR,
-      ...config.responseError,
-    };
-
-    if (config.responseType === "json") {
-      // 在发起请求前处理掉 json 类型的 responseType
-      config._responseType = config.responseType;
-      config.responseType = undefined;
-      delete config.responseType;
-    }
-
-    if (config.transformResponse && config.transformResponse.length > 0) {
-      // 在发起请求前处理掉 transformResponse
-      config._transformResponse = config.transformResponse;
-      config.transformResponse = [];
-    }
-
-    return config;
-  },
-  function (error) {
-    return Promise.reject(error);
-  }
-);
-axios.interceptors.response.use(
-  function (response) {
-    // 只有 validateStatus 为 true 的状态码才会进入该函数
-
-    if (response.config._responseType) {
-      // 还原 responseType
-      response.config.responseType = response.config._responseType;
-      delete response.config._responseType;
-    }
-    if (response.config._transformResponse) {
-      // 还原 transformResponse
-      response.config.transformResponse =
-        response.config._transformResponse;
-      delete response.config._transformResponse;
-    }
-
-    if (
-      (response.status >= 200 &&
-        response.status < 300 &&
-        response.config.responseType === "json") ||
-      /^application\/json/i.test(response.headers["content-type"])
-    ) {
-      try {
-        response.text = response.data;
-        response.data = JSON.parse(response.data);
-      } catch (error) {
-        return Promise.reject(
-          enhanceError(
-            error,
-            response.config,
-            response.config.responseError.RESPONSE_INVALID,
-            response.request,
-            response
-          )
-        );
-      }
-    }
-
-    try {
-      if (
-        Array.isArray(response.config.transformResponse) &&
-        response.config.transformResponse.length > 0
-      ) {
-        return response.config.transformResponse.reduce(function (
-          rcc,
-          transform
-        ) {
-          return transform(rcc, response);
-        },
-        response.data);
-      }
-    } catch (error) {
-      return Promise.reject(
-        enhanceError(
-          error,
-          response.config,
-          String(
-            error.code || response.config.responseError.SERVER_ERROR
-          ),
-          response.request,
-          response
-        )
-      );
-    }
-  },
-  function (err) {
-    // 取消、网络和超时等异常
-    let error = err;
-    if (err.isAxiosError && err.config) {
-      if (!err.code && err.message === "Network Error") {
-        // 网络问题
-        err.code = err.config.responseError.REQUEST_OFFLINE;
-      } else if (
-        err.code === "ECONNABORTED" &&
-        err.message.indexOf("timeout") >= 0
-      ) {
-        // 超时
-        err.code = err.config.responseError.REQUEST_TIMEOUT;
-      }
-    } else if (err instanceof axios.Cancel) {
-      // 取消
-      error = enhanceError(
-        new Error(err.message),
-        undefined,
-        "REQUEST_ABORTED" // TODO: 取消的网络请求无法读取配置
-      );
-    }
-    return Promise.reject(error);
-  }
-);
-```
-
 ## 用法说明
 
 eaxios 主要对响应的处理做了一些优化，除了以下部分，eaxios 的 api 与 axios 保持一致：
@@ -222,12 +50,14 @@ eaxios 主要对响应的处理做了一些优化，除了以下部分，eaxios 
     eaxios.defaults.transformResponse = [
       function (data, response) {
         if (typeof data === 'object') {
+          // 默认约定有成功解析 JSON 对象，就认为服务端成功响应，且有提供错误码
           if (data.code === 0) {
             return data.data;
           } else {
             throw eaxios.createError(data.message, data.code, response);
           }
         } else {
+          // 50x 等服务异常情况
           throw eaxios.createError(
             data,
             response.config.responseError.SERVER_ERROR,
@@ -272,6 +102,98 @@ eaxios 主要对响应的处理做了一些优化，除了以下部分，eaxios 
     ```
 
 - eaxios 内部会自动序列化表单类型的请求参数，所以主要传对象给 data 就行了。
+
+## 代码示例
+
+下面以 `{ code: 0, message: 'success', data: { } }` 这样的接口规范为例，演示如何使用 eaxios。
+
+```js
+const eaxios = require('..');
+
+const request = eaxios.create({
+  baseURL: 'https://run.mocky.io/v3',
+  timeout: 30000,
+  transformResponse: [
+    function (data, response) {
+      if (typeof data === 'object') {
+        if (data.code === 0) {
+          return data.data;
+        } else {
+          throw eaxios.createError(data.message, data.code, response);
+        }
+      } else {
+        throw eaxios.createError(
+          data,
+          response.config.responseError.SERVER_ERROR,
+          response,
+        );
+      }
+    },
+  ],
+});
+
+function printError(error) {
+  console.log(
+    `code: ${error.code}, name: ${error.name}, message: ${error.message}, isAxiosError: ${error.isAxiosError}, stack:\n${error.stack}`,
+  );
+}
+
+function success() {
+  console.log('>> success');
+  return request('/4f503449-0349-467e-a38a-c804956712b7')
+    .then((data) => {
+      console.log('success', data);
+    })
+    .catch((error) => {
+      printError(error);
+    });
+}
+
+function failure() {
+  console.log('>> failure');
+  return request('/42d7c21d-5ae6-4b52-9c2d-4c3dd221eba4')
+    .then((data) => {
+      console.log('success', data);
+    })
+    .catch((error) => {
+      printError(error);
+    });
+}
+
+function invalid() {
+  console.log('>> invalid');
+  return request('/1b23549f-c918-4362-9ac8-35bc275c09f0')
+    .then((data) => {
+      console.log('success', data);
+    })
+    .catch((error) => {
+      printError(error);
+    });
+}
+
+function server_500() {
+  console.log('>> server_500');
+  return request('/2a9d8c00-9688-4d36-b2de-2dee5e81f5b3')
+    .then((data) => {
+      console.log('success', data);
+    })
+    .catch((error) => {
+      printError(error);
+    });
+}
+
+success().then(failure).then(invalid).then(server_500);
+/* log
+>> success
+success { id: 1 }
+>> failure
+code: 10000, name: Error, message: error, isAxiosError: true, stack: ...
+>> invalid
+code: RESPONSE_INVALID, name: SyntaxError, message: Unexpected token V in JSON at position 0, isAxiosError: true, stack: ...
+>> server_500
+code: SERVER_ERROR, name: Error, message: ...,  stack: ...
+*/
+```
 
 ## 兼容性
 

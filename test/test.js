@@ -1,22 +1,26 @@
 const eaxios = require('..');
 
-eaxios.defaults.transformResponse = [
-  function (data, response) {
-    if (typeof data === 'object') {
-      if (data.code === 0) {
-        return data.data;
+const request = eaxios.create({
+  baseURL: 'https://run.mocky.io/v3',
+  timeout: 30000,
+  transformResponse: [
+    function (data, response) {
+      if (typeof data === 'object') {
+        if (data.code === 0) {
+          return data.data;
+        } else {
+          throw eaxios.createError(data.message, data.code, response);
+        }
       } else {
-        throw eaxios.createError(data.message, data.code, response);
+        throw eaxios.createError(
+          data,
+          response.config.responseError.SERVER_ERROR,
+          response,
+        );
       }
-    } else {
-      throw eaxios.createError(
-        data,
-        response.config.responseError.SERVER_ERROR,
-        response,
-      );
-    }
-  },
-];
+    },
+  ],
+});
 
 function printError(error) {
   console.log(
@@ -26,7 +30,7 @@ function printError(error) {
 
 function success() {
   console.log('>> success');
-  return eaxios('https://run.mocky.io/v3/4f503449-0349-467e-a38a-c804956712b7')
+  return request('/4f503449-0349-467e-a38a-c804956712b7')
     .then((data) => {
       console.log('success', data);
     })
@@ -37,7 +41,7 @@ function success() {
 
 function failure() {
   console.log('>> failure');
-  return eaxios('https://run.mocky.io/v3/42d7c21d-5ae6-4b52-9c2d-4c3dd221eba4')
+  return request('/42d7c21d-5ae6-4b52-9c2d-4c3dd221eba4')
     .then((data) => {
       console.log('success', data);
     })
@@ -48,7 +52,7 @@ function failure() {
 
 function invalid() {
   console.log('>> invalid');
-  return eaxios('https://run.mocky.io/v3/1b23549f-c918-4362-9ac8-35bc275c09f0')
+  return request('/1b23549f-c918-4362-9ac8-35bc275c09f0')
     .then((data) => {
       console.log('success', data);
     })
@@ -59,7 +63,7 @@ function invalid() {
 
 function server_500() {
   console.log('>> server_500');
-  return eaxios('https://run.mocky.io/v3/2a9d8c00-9688-4d36-b2de-2dee5e81f5b3')
+  return request('/2a9d8c00-9688-4d36-b2de-2dee5e81f5b3')
     .then((data) => {
       console.log('success', data);
     })
