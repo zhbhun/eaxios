@@ -1,4 +1,4 @@
-interface EaxiosErrorCode {
+export interface EaxiosErrorCode {
   REQUEST_OFFLINE: string;
   REQUEST_TIMEOUT: string;
   SERVER_ERROR: string;
@@ -81,7 +81,7 @@ export interface EaxiosRequestConfig<ResponseData = any, RequestData = any> {
   withCredentials?: boolean;
   adapter?: EaxiosAdapter;
   auth?: EaxiosBasicCredentials;
-  responseError?: EaxiosError;
+  responseError?: EaxiosErrorCode;
   responseType?: ResponseType;
   xsrfCookieName?: string;
   xsrfHeaderName?: string;
@@ -111,7 +111,7 @@ export interface EaxiosError<T = any> extends Error {
   code?: string;
   request?: any;
   response?: EaxiosResponse<T>;
-  isEaxiosError: boolean;
+  isAxiosError: boolean;
   toJSON: () => object;
 }
 
@@ -205,6 +205,11 @@ export interface EaxiosInstance {
 
 export interface EaxiosStatic extends EaxiosInstance {
   create(config?: EaxiosRequestConfig): EaxiosInstance;
+  createError(
+    message: string,
+    code: string,
+    response: EaxiosResponse,
+  ): EaxiosError;
   Cancel: CancelStatic;
   CancelToken: CancelTokenStatic;
   isCancel(value: any): boolean;

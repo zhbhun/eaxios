@@ -26,6 +26,8 @@
   "files": [
     "dist",
     "lib",
+    "index.d.ts",
+    "index.js",
     "errors.svg"
   ],
   "scripts": {
@@ -39,7 +41,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "axios": "~0.19.2"
+    "axios": "^0.19.2"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^5.0.1",
