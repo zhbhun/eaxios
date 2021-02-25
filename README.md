@@ -206,6 +206,73 @@ axios.interceptors.response.use(
 );
 ```
 
+## 用法说明
+
+eaxios 主要对响应的处理做了一些优化，除了以下部分，eaxios 的 api 与 axios 保持一致：
+
+- eaxios 请求配置的 transformResponse 传参和处理时机发生了变化
+
+    axios 在服务端响应内容后就会调用 transformResponse 进行响应转换，eaxios 响应后内部自动根据响应头和 responseType 进行 JSON 解析，然后将解析后的数据和 response 传给 transformResponse，transformResponse 返回的数据最终会被 Promise resovle 给外部调用者。
+
+    假设服务端返回的数据结构为 `{ code: 0, message: 'success', data: {} }`，code 为 0 表示正确的响应，非 0 表示异常，接口请求的代码示例如下所示：
+
+    ```js
+    const eaxios = require('eaxios');
+
+    eaxios.defaults.transformResponse = [
+      function (data, response) {
+        if (typeof data === 'object') {
+          if (data.code === 0) {
+            return data.data;
+          } else {
+            throw eaxios.createError(data.message, data.code, response);
+          }
+        } else {
+          throw eaxios.createError(
+            data,
+            response.config.responseError.SERVER_ERROR,
+            response
+          );
+        }
+      },
+    ];
+
+    return eaxios('https://run.mocky.io/v3/4f503449-0349-467e-a38a-c804956712b7')
+      .then((data) => {
+        console.log('success', data.id);
+      })
+      .catch((error) => {
+        console.log('failure', error.code); // UNKNOWN、REQUEST_OFFLINE、REQUEST_TIMEOUT、SERVER_ERROR、RESPONSE_INVALID 和业务错误码
+      });
+    ```
+
+    ps：如果存在服务单接口请求规范，可以通过 eaxios.create 创建适用于不同接口规范的请求函数。
+
+- eaxios 的请求处理函数 then 只会接收到 transformResponse 转换后的数据，对于网络、超时、服务端异常和业务异常等问题，会在 catch 接收一个 EaxiosError 类型的错误对象。
+
+    ```ts
+    interface EaxiosError<T = any> extends Error {
+      config: EaxiosRequestConfig;
+      code?: string;
+      request?: any;
+      response?: EaxiosResponse<T>;
+      isAxiosError: boolean;
+      toJSON: () => object;
+    }
+    ```
+
+    错误处理函数可以根据错误码 code 来处理异常，code 可能的值为 UNKNOWN、REQUEST_OFFLINE、REQUEST_TIMEOUT、SERVER_ERROR、RESPONSE_INVALID 和其他业务错误码。
+
+    ps：如果要定制错误码，可以在请求配置中添加配置项 `responseError`。
+
+    ```js
+    eaxios.defaults.responseError = {
+      REQUEST_OFFLINE: '1'REQUEST_OFFLINE
+    };
+    ```
+
+- eaxios 内部会自动序列化表单类型的请求参数，所以主要传对象给 data 就行了。
+
 ## 兼容性
 
 eaxios 依赖 URLSearchParams 处理表单类型的请求参数，不支持的环境需要引入响应的 polyfill

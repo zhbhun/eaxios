@@ -32,6 +32,7 @@ function process(instance) {
       // TODO: 如何继承默认值配置
       config.responseError = {
         ...EAXIOS_ERROR_CODE,
+        ...instance.defaults.responseError,
         ...config.responseError,
       };
 
@@ -53,14 +54,14 @@ function process(instance) {
         (config.headers['Content-Type'] || config.headers['content-type']) ===
           'application/x-www-form-urlencoded'
       ) {
-        if (config.data) {
+        if (config.data && typeof config.data === 'object') {
           const searchParams = new URLSearchParams('');
           for (const key in config.data) {
             searchParams.append(config.data[key]);
           }
           config.data = searchParams.toString();
         } else {
-          config.data = '';
+          config.data = config.data || '';
         }
       }
 
