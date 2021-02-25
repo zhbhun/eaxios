@@ -205,3 +205,15 @@ axios.interceptors.response.use(
   }
 );
 ```
+
+## 兼容性
+
+eaxios 依赖 URLSearchParams 处理表单类型的请求参数，不支持的环境需要引入响应的 polyfill
+
+- [core-js](https://github.com/zloirock/core-js)
+
+    ```js
+    require("core-js/modules/web.url-search-params.js")
+    ```
+
+- [url-search-params-polyfill](https://www.npmjs.com/package/url-search-params-polyfill)

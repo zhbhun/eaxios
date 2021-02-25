@@ -2,7 +2,8 @@ import axios from 'axios';
 import * as Axios from 'axios';
 import enhanceError from 'axios/lib/core/enhanceError';
 
-export const EAXIOS_ERROR_CODE = {
+const EAXIOS_ERROR_CODE = {
+  UNKNOWN: 'UNKNOWN',
   REQUEST_OFFLINE: 'REQUEST_OFFLINE',
   REQUEST_TIMEOUT: 'REQUEST_TIMEOUT',
   SERVER_ERROR: 'SERVER_ERROR',
@@ -45,6 +46,22 @@ function process(instance) {
         // 在发起请求前处理掉 transformResponse
         config._transformResponse = config.transformResponse;
         config.transformResponse = [];
+      }
+
+      if (
+        (config.method || '').toLowerCase() === 'post' &&
+        (config.headers['Content-Type'] || config.headers['content-type']) ===
+          'application/x-www-form-urlencoded'
+      ) {
+        if (config.data) {
+          const searchParams = new URLSearchParams('');
+          for (const key in config.data) {
+            searchParams.append(config.data[key]);
+          }
+          config.data = searchParams.toString();
+        } else {
+          config.data = '';
+        }
       }
 
       return config;
@@ -105,13 +122,19 @@ function process(instance) {
         }
       } catch (error) {
         return Promise.reject(
-          enhanceError(
-            error,
-            response.config,
-            String(error.code || response.config.responseError.SERVER_ERROR),
-            response.request,
-            response,
-          ),
+          error.isAxiosError
+            ? error
+            : enhanceError(
+                error,
+                response.config,
+                String(
+                  code === null || code === undefined
+                    ? EAXIOS_ERROR_CODE.UNKNOWN
+                    : code,
+                ),
+                response.request,
+                response,
+              ),
         );
       }
     },
@@ -145,11 +168,25 @@ function process(instance) {
     const newInstance = instance.lagacyCreate(config);
     return process(newInstance);
   };
+  instance.createError = function (message, code, response) {
+    const error = new Error(message);
+    error.code = String(
+      code === null || code === undefined ? EAXIOS_ERROR_CODE.UNKNOWN : code,
+    );
+    if (response) {
+      return enhanceError(
+        error,
+        response.config,
+        String(error.code || response.config.responseError.UNKNOWN),
+        response.request,
+        response,
+      );
+    }
+    return error;
+  };
   return instance;
 }
 
 const eaxios = process(axios);
 
-export * from 'axios';
-
-export default eaxios;
+module.exports = eaxios;
