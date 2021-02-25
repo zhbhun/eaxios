@@ -1,22 +1,34 @@
-# eaxios
+# Eaxios
 
-[Axios](https://github.com/axios/axios) wrapper with user friendly error.
-
-![errors.svg](errors.svg)
+Eaxios 是基于 [axios](https://github.com/axios/axios) 封装的网络请求库，在保持 API 与 axios 基本一致的情况下，简化服务端响应内容和各种异常情况的处理。
 
 ## 开发背景
 
-Axios 存在问题：
+![errors.svg](errors.svg)
+
+如上图所示，是一次 Ajax 请求可能输出的结果，在前端我们需要根据输出结果给用户不同的提示。
+
+- 请求被取消：忽略
+- 网络异常：提示检查是否连接网络
+- 请求超时：提示网络慢，请切换网络
+- 服务器异常：提示系统出问题了
+- 响应解析失败：同上，且可以进行错误日志上报
+- 请求失败：这种情况通常是业务异常，前端需要根据错误码进行相应的处理，最简单的就是消息提醒
+- 请求成功：前端拿到数据后更新界面
+
+但是，现有的 Axios 库对于异常结果没有提供较好的封装，Axios Promise catch 里包含各种类型的错误，而且没有提供错误码来识别请求失败的原因。而且很多服务端接口会返回自己的错误码，这样在 Axios Promise then 里也需要处理业务异常。
+
+此外，Axios 本身如下所述的一些问题和局限性。
 
 - 如果设置 Axios responseType 为 json 时，服务端返回的非 JSON 格式的响应内容会因为无法解析，response.data 为 null
 
-    对于 500 等错误，响应内容会丢失，所以不要去配置 responseType 为 json。
+    对于 500 等错误，响应内容会丢失，所以不要去配置 responseType 为 json，对于使用者来说容易采到这个坑。
     
-    ps：虽然 Axios 官方文档声明 responseType 是 json，实际上底层调用 XMLHttpRequest 的 responseType 是没有传值的，应该是为了规避上一个问题。
+    ps：虽然 Axios 官方文档声明 responseType 是 json，实际上底层调用 XMLHttpRequest 的 responseType 是没有传值的，应该是为了规避这个问题。
 
 - Axios 默认不管 HTTP 响应状态和 responseType 是什么，都会调用默认的 [transformResponse](https://github.com/axios/axios/blob/b7e954eba3911874575ed241ec2ec38ff8af21bb/lib/defaults.js#L57)
 
-    ps：应该是为了规避上面的问题，默认提供了一个响应处理函数进行 JSON 解析，但是这会影响性能（500 等响应内容值较多时，会造成页面卡顿）。虽然 transformResponse 就转换 response，实际接收到的参数是 response.data，所以无法判断具体情况来决定是否进行解析 JSON。
+    ps：应该是为了规避上一个问题，默认提供了一个响应处理函数进行 JSON 解析，但是这会影响性能（500 等响应内容值较多时，会造成页面卡顿）。虽然 transformResponse 可以转换 response，实际接收到的参数是 response.data，所以无法判断具体情况来决定是否进行解析 JSON。
 
 - Axios then 和 catch 是根据 [validateStatus](https://github.com/axios/axios#request-config) 决定的，使用者处理以来较为麻烦。
 
