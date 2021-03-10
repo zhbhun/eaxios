@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/zhbhun/eaxios/compare/v1.0.0...v1.0.1) (2021-03-10)
+
+
+### Bug Fixes
+
+* 修复 package.json main 配置错误问题 ([60b11be](https://github.com/zhbhun/eaxios/commit/60b11beb87ad12815ee5884a2cdf86cc40fc00fb))
+
 # 1.0.0 (2021-02-25)
 
 
