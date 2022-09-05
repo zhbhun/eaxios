@@ -1,4 +1,4 @@
-# Eaxios
+> axios 现有版本已经内置了错误码，开发者在它基础上自定义拦截器即可满足需求。
 
 Eaxios 是基于 [axios](https://github.com/axios/axios) 封装的网络请求库，在保持 API 与 axios 基本一致的情况下，简化服务端响应内容和各种异常情况的处理。
 
